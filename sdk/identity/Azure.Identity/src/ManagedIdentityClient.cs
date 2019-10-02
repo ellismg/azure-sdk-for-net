@@ -10,6 +10,8 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure.Core.Http;
+using System.Net.Http;
+using System.Net.Sockets;
 
 namespace Azure.Identity
 {
@@ -350,6 +352,12 @@ namespace Azure.Identity
                 // was user cancelled we don't wan't to handle the exception so s_identityAvailable will
                 // remain unset, as we still haven't determined if the imds endpoint is available.
                 catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+                {
+                    return false;
+                }
+                // when the IDMS endpoint is unreachable, for example, when running outside of Azure where the metadata
+                // service is not running and 169.254.169.254 is unroutable, an HttpRequestException is thrown.
+                catch (HttpRequestException e) when (e.InnerException is SocketException)
                 {
                     return false;
                 }
